@@ -10,7 +10,7 @@ externalDocs:
   description: Find out more about Swagger
   url: http://swagger.io
 servers:
-  - url: http://{hostIP}:{port}/api/v1/switcher
+  - url: http://{hostIP}:{port}/api/v2/switcher
     variables:
       hostIP:
         default: ''
@@ -29,14 +29,14 @@ servers:
 paths:
   /inputs:
     get:
-      summary: Retrieves status of the switcher inputs
+      summary: Retrieves switcher inputs configuration
       responses:
         '200':
           description: Successful operation
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/inputs_status'  
+                $ref: '#/components/schemas/inputs_config'  
         '500':
           description: Internal server error
           content:
@@ -51,8 +51,29 @@ paths:
         type: integer
       required: true
       description: Input ID
+    get:
+      summary: Gets the input source status
+      responses:
+        '200':
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/switcher_input_source_status'  
+        '400':
+          description: Invalid param/s
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/error_status'      
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/error_status'       
     put:
-      summary: Adds a new dynamic source to the switcher input
+      summary: Configures the input source
       description: This method adds a new dynamic stream to the switcher input
       requestBody:
         content:
@@ -81,8 +102,8 @@ paths:
               schema:
                 $ref: '#/components/schemas/error_status'  
     delete:
-      summary: Deletes the input source
-      description: This method deletes the dynamic source associated to the switcher input 
+      summary: Deletes the input source config
+      description: This method deletes the input source config associated to the switcher input 
       responses:
         '200':
           description: Successful operation
@@ -100,7 +121,7 @@ paths:
                 $ref: '#/components/schemas/error_status'  
   /outputs:
     get:
-      summary: Retrieves status of the switcher outputs
+      summary: Retrieves switcher outputs status
       responses:
         '200':
           description: Successful operation
@@ -146,6 +167,27 @@ paths:
         type: integer
       required: true
       description: Output ID
+    get:
+      summary: Gets the output sink status
+      responses:
+        '200':
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/switcher_output_sink_status'  
+        '400':
+          description: Invalid param/s
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/error_status'      
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/error_status'       
     put:
       summary: Configures the output sink
       description: This method configures output sink
@@ -171,7 +213,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/error_status' 
     delete:
-      summary: Deletes the output sink
+      summary: Deletes the output sink config
       description: This method deletes the dynamic sink associated to the switcher output 
       responses:
         '200':
@@ -196,68 +238,33 @@ components:
         description:
           description: Provides description of the error
           type: string
-    inputs_status:
+    inputs_config:
+      type: object
+      properties:
+        inputsCount:
+          description: Total numnber of inputs
+          type: integer
+    outputs_status:
       type: object
       properties:
         active_input_id: 
           description: Currently active input ID
           type: integer
-        mode:
-          description: Current switching mode
+        switchMode:
+          description: Switch mode
           type: string
+          enum:
+            - AUTO
+            - FORCED
         latency_ms: 
           description: Latency introduced by switcher in milliseconds
           type: integer
         preferred_input_id:
           description: Current preferred input ID
           type: integer
-        inputs:
-          description: Switcher inputs
-          type: array
-          items:
-            type: object
-            description: Input details
-            properties:
-              id:
-                description: Input ID
-                type: integer
-              uri:
-                description: Input stream URI
-                type: string
-              iface:
-                description: Interface of source stream
-                type: string
-              stream_origin:
-                description: Source of the stream
-                type: string
-                enum:
-                  - AMAGI_CP # source is amagi playout
-                  - OTHERS # other sources
-              status:
-                description: Status of the stream
-                type: string
-                enum:
-                  - AS_OK # source is available without any errors
-                  - AS_ERROR # errors observed in source
-                  - AS_MISSING # source is down or not available
-    outputs_status:
-      type: array
-      items:
-        type: object
-        description: Switcher output
-        properties:
-          output_uri:
-            description: Output URI
-            type: string
-          output_iface:
-            description: Output interface
-            type: string
-          status:
-            description: Output stream status
-            type: string   
-            enum:
-              - AS_OK # source is available without any errors
-              - AS_ERROR # error generating output
+        outputCount:
+          description: Total number of outputs
+          type: integer
     switcher_output_rule:
       type: object
       properties:
@@ -279,6 +286,29 @@ components:
         preferredInputID:
           description: This is applicable only for auto mode.
           type: string
+    switcher_input_source_status:
+      type: object
+      description: Input source details
+      properties:
+        uri:
+          description: Input stream URI
+          type: string
+        iface:
+          description: Interface of source stream
+          type: string
+        stream_origin:
+          description: Source of the stream
+          type: string
+          enum:
+            - AMAGI_CP # source is amagi playout
+            - OTHERS # other sources
+        status:
+          description: Status of the stream
+          type: string
+          enum:
+            - AS_OK # source is available without any errors
+            - AS_ERROR # errors observed in source
+            - AS_MISSING # source is down or not available
     switcher_input_source_config:
       type: object
       properties:
@@ -290,4 +320,19 @@ components:
       properties:
         output_uri:
           description: Output URI.
-          type: string          
+          type: string      
+    switcher_output_sink_status:
+      type: object
+      properties:
+        output_uri:
+          description: Output URI
+          type: string
+        output_iface:
+          description: Output interface
+          type: string
+        status:
+          description: Output stream status
+          type: string   
+          enum:
+            - AS_OK # source is available without any errors
+            - AS_ERROR # error generating output
